@@ -11,6 +11,7 @@ import android.net.NetworkInfo;
 
 import com.udacity.stockhawk.data.Contract;
 import com.udacity.stockhawk.data.PrefUtils;
+import com.udacity.stockhawk.mock.MockHistoricData;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -81,7 +82,16 @@ public final class QuoteSyncJob {
 
                 // WARNING! Don't request historical data for a stock that doesn't exist!
                 // The request will hang forever X_x
-                List<HistoricalQuote> history = stock.getHistory(from, to, Interval.WEEKLY);
+
+                //History fetching disabled due to problem with used yahoo library. below getHistory()
+                // Data mocked !!!
+                //regquest always provide unhandled exception:
+                //java.io.FileNotFoundException: https://ichart.yahoo.com/table.csv?s=GOOG&a=4&b=17&c=2015&d=4&e=17&f=2017&g=w&ignore=.csv
+                // It's due to yahoofinance lib problem: https://github.com/sstrickx/yahoofinance-api/issues/75
+
+
+                //List<HistoricalQuote> history = stock.getHistory(from, to, Interval.WEEKLY);
+                List<HistoricalQuote> history = MockHistoricData.getHistory();
 
                 StringBuilder historyBuilder = new StringBuilder();
 
@@ -91,6 +101,7 @@ public final class QuoteSyncJob {
                     historyBuilder.append(it.getClose());
                     historyBuilder.append("\n");
                 }
+
 
                 ContentValues quoteCV = new ContentValues();
                 quoteCV.put(Contract.Quote.COLUMN_SYMBOL, symbol);
@@ -113,7 +124,7 @@ public final class QuoteSyncJob {
             Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED);
             context.sendBroadcast(dataUpdatedIntent);
 
-        } catch (IOException exception) {
+        } catch (IOException | StringIndexOutOfBoundsException exception) {
             Timber.e(exception, "Error fetching stock quotes");
         }
     }
